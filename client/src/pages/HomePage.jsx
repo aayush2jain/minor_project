@@ -22,7 +22,7 @@ const HomePage = () => {
         <nav className="sticky top-0 z-10 flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
               <img src="/logo.svg" alt="logo" className='size-6'/>
-              <span className='text-xl font-semibold tracking-tight'>BuilderAI</span>
+              <span className='text-xl font-semibold tracking-tight'>PortigoAI</span>
           </div>
           <div className='flex items-center gap-4 text-sm font-medium text-zinc-300'>
             <span>{user?.name}</span>
@@ -37,8 +37,8 @@ const HomePage = () => {
           <div className="w-full max-w-2xl flex flex-col items-center">
               {/* Promo Badge */}
               <div className='flex items-center gap-2 p-1.5 pr-3 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[13px] text-white/90'>
-                <span className='px-3 py-1 text-[11px] bg-red-700 rounded-full font-medium tracking-wider'>PROMO</span>
-                <span>Create your first project for free.</span>
+      
+                <span>Create your website for free.</span>
               </div>
 
               {/* Title */}
