@@ -64,6 +64,15 @@ export async function createProject(req, res){
 async function runBackgroundGeneration(projectId, prompt){
     try {
         console.log(`[Background AI] Starting generation for project ${projectId}`);
+        let progressWrites = Promise.resolve();
+        const enqueueProgressWrite = (write) => {
+            const nextWrite = progressWrites.then(write);
+            progressWrites = nextWrite.catch((err) => {
+                console.error(`[Background AI] Failed to persist generation progress for project ${projectId}:`, err);
+            });
+            return nextWrite;
+        };
+
         const result = await generateProject(prompt, {
             onPlan: async (plan) =>{
                 console.log(`[Background AI] Plan created for project ${projectId}. Planned ${plan.files.length} files.`);
@@ -91,28 +100,45 @@ async function runBackgroundGeneration(projectId, prompt){
             onFileComplete: async (path, code)=>{
                 console.log(`[Background AI] Finished file ${path} for project ${projectId}`);
 
-                const project = await Project.findById(projectId);
+                try {
+                    await enqueueProgressWrite(async () => {
+                        const project = await Project.findById(projectId);
 
-                if(project){
-                    project.files = project.files || {};
-                    project.files[path] = { content: code, hash: hashContent(code) };
-                    project.filesGenerated = [...(project.filesGenerated || []), path];
-                    project.messages.push({
-                        role: "assistant",
-                        content: `Created file "${path}"`,
-                        timestamp: new Date(),
+                        if(project){
+                            project.files = project.files || {};
+                            project.files[path] = { content: code, hash: hashContent(code) };
+                            project.filesGenerated = [...new Set([...(project.filesGenerated || []), path])];
+                            project.messages.push({
+                                role: "assistant",
+                                content: `Created file "${path}"`,
+                                timestamp: new Date(),
+                            });
+                            project.currentFile = null;
+                            project.markModified("files");
+                            await project.save();
+                        }
                     });
-                    project.currentFile = null;
-                    project.markModified("files");
-                    await project.save();
+                } catch (err) {
+                    // Final persistence below writes the complete result, so a progress-write failure
+                    // should not cause successfully generated code to be treated as a failed file.
+                    console.error(`[Background AI] Progress save failed for ${path} in project ${projectId}:`, err);
                 }
             }
         })
 
+        await progressWrites;
         console.log(`[Background AI] Successfully generated project ${projectId}`);
 
         const project = await Project.findById(projectId);
         if(project){
+            const finalFiles = {};
+            for (const [path, content] of Object.entries(result.files)) {
+                finalFiles[path] = { content, hash: hashContent(content) };
+            }
+            project.files = finalFiles;
+            project.markModified("files");
+            project.filesGenerated = Object.keys(finalFiles);
+            project.currentFile = null;
             project.status = "completed";
             project.version = 1;
             if(result.description){

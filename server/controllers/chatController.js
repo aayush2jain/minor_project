@@ -1,6 +1,7 @@
 import { Project } from "../models/Project.js";
 import { reviseProject } from "../services/ai.js";
 import { applyOperations } from "../services/diff.js";
+import { validateSyntax } from "../services/codeValidator.js";
 
 export function buildManifest(files){
     const manifest = [];
@@ -68,6 +69,36 @@ export async function chat(req, res){
 
         if(errors.length > 0){
             console.warn(`[Diff] Errors applying operations:`, errors);
+        }
+
+        // Reject revisions that leave changed JavaScript files syntactically invalid.
+        const syntaxErrors = [];
+        for (const [path, entry] of Object.entries(updatedFiles)) {
+            if (!/\.(js|jsx)$/i.test(path)) continue;
+
+            const previousContent = project.files[path]?.content;
+            if (entry.content === previousContent) continue;
+
+            const validation = validateSyntax(entry.content, path);
+            if (!validation.valid) {
+                syntaxErrors.push(
+                    `${path}: ${validation.error} (line ${validation.line}, column ${validation.column})`,
+                );
+            }
+        }
+
+        if (syntaxErrors.length > 0) {
+            const errorMessage =
+                `Revision was not saved because it introduced syntax errors:\n${syntaxErrors.join("\n")}`;
+            project.status = "completed";
+            project.messages.push({
+                role: "assistant",
+                content: errorMessage,
+                timestamp: new Date(),
+            });
+            await project.save();
+            res.status(422).json({ error: errorMessage, syntaxErrors });
+            return;
         }
 
         // Update project in DB

@@ -223,7 +223,7 @@ export async function reviseProject(prompt, manifest, relevantFiles, recentMessa
             let opStr = String(op.op || "").trim().toLowerCase();
 
             if(["create", "add", "new"].includes(opStr)) op.op = "create";
-            else if (["update", "edit", "modify", "patch"].includes(opStr)) op.op = "update";
+            else if (["update","recreate","edit", "modify", "patch"].includes(opStr)) op.op = "update";
             else if (["delete", "remove", "del", "rm"].includes(opStr)) op.op = "delete";
 
             if(op.path && typeof op.path === "string" && !op.path.startsWith("/")){

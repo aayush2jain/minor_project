@@ -84,20 +84,22 @@ export function AppContextProvider({children}){
       }
 
       // Projects Actions
-      const loadProjects = async () =>{
-        if(!user) return;
-        try {
-            const { data } = await api.get("/api/projects")
-            setProjects(data)
-        } catch (err) {
-            console.error("Failed to list projects:", err);
-            toast.error("Failed to load projects list");
-        }finally{
-            setLoadingProjects(false);
-        }
-      }
+    const loadProjects = useCallback(async () => {
+  if (!user) return;
 
-      const loadProject =  async (id, silent = false)=>{
+  try {
+    const { data } = await api.get("/api/projects");
+    setProjects(data);
+  } catch (err) {
+    console.error("Failed to list projects:", err);
+    toast.error("Failed to load projects list");
+  } finally {
+    setLoadingProjects(false);
+  }
+}, [user]);
+      
+
+      const loadProject = useCallback(async (id, silent = false)=>{
         console.log("load project");
         
         if(!user) return;
@@ -124,7 +126,7 @@ export function AppContextProvider({children}){
             }finally{
                 if (!silent) setLoadingActiveProject(false)
             }
-      }
+      }, [navigate, user]);
 
        // Automatically poll active project status if generating or pending
        useEffect(()=>{

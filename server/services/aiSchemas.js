@@ -9,7 +9,7 @@ export const GenerationResultSchema = z.object({
 export const FileOpSchema = z.object({
     op: z.enum(["create", "update", "delete"]),
     path: z.string(),
-    content: z.string().nullable().optional(),
+    content: z.string().nullable(),
     search: z.string().nullable().optional(),
     replace: z.string().nullable().optional(),
 });

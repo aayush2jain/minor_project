@@ -1,7 +1,7 @@
 import { User } from "../models/User.js";
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET  = process.env.JWT_SECRET || "fallback_secret"
+const JWT_SECRET  = process.env.JWT_SECRET
 
 // Helper to set cookie
 const setSessionCookie = (res, payload)=>{

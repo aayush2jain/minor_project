@@ -64,7 +64,7 @@ const HomePage = () => {
                   <div className="animate-marquee gap-3">
                       {homeTags.map((tag, i)=>(
                         <button key={i}
-                        onClick={()=> handleGenerate(tag)}
+    
                         disabled={generatingProject}
                         className='px-4 py-1.5 border rounded-full text-sm text-white bg-white/10 border-white/25 hover:bg-white/20 transition cursor-pointer shrink-0 font-medium'>
                           {tag}
